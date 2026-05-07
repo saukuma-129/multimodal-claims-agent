@@ -1,6 +1,12 @@
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
 
+class RetrievedClause(BaseModel):
+    clause_id: str
+    title: str
+    content: str
+    relevance_score: float
+
 class VisionAssessment(BaseModel):
     damage_type: Optional[str] = None
     confidence: float = 0.0
@@ -12,6 +18,7 @@ class ClaimDecision(BaseModel):
     decision: Literal["approved", "rejected", "manual_review"]
     reason_codes: List[str] = Field(default_factory=list)
     confidence: float = 0.0
+    policy_references: List[str] = Field(default_factory=list)
 
 class UploadedEvidence(BaseModel):
     claim_id: str
@@ -20,10 +27,10 @@ class UploadedEvidence(BaseModel):
 class ClaimWorkflowState(BaseModel):
     claim_id: str
     customer_statement: Optional[str] = None
-    retrieved_clauses: List[dict] = Field(default_factory=list) 
+    retrieved_clauses: List[RetrievedClause] = Field(default_factory=list)
     vision_assessment: Optional[VisionAssessment] = None
     missing_requirements: List[str] = Field(default_factory=list)
-    final_decision: Optional[dict] = None
+    final_decision: Optional[ClaimDecision] = None
 
 class ClaimSession(BaseModel):
     claim_id: str
