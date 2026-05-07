@@ -6,7 +6,12 @@ class VisionAssessment(BaseModel):
     confidence: float = 0.0
     water_damage_visible: bool = False
     tampering_visible: bool = False
-    image_quality: Literal["good", "poor", "invalid"] = "good"
+    image_quality: str = "unknown" 
+
+class ClaimDecision(BaseModel):
+    decision: Literal["approved", "rejected", "manual_review"]
+    reason_codes: List[str] = Field(default_factory=list)
+    confidence: float = 0.0
 
 class UploadedEvidence(BaseModel):
     claim_id: str

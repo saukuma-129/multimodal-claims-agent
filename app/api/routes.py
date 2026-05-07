@@ -28,4 +28,4 @@ async def evaluate_claim(evidence: UploadedEvidence):
         
     except Exception as e:
         # Triage failure
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Debug Error: {str(e)}")
