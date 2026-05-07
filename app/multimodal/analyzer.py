@@ -9,14 +9,28 @@ from app.models.schemas import VisionAssessment
 load_dotenv()
 
 VISION_SYSTEM_PROMPT = """
-You are a warranty inspection assistant. Extract structured findings from evidence.
-Focus on: hardware damage, water exposure/corrosion, tampering, and image usability.
-Do not speculate. Return STRICT JSON only.
+You are a warranty inspection assistant. Extract findings from hardware images.
+IMPORTANT: Return STRICT JSON with these types:
+- damage_type: string
+- severity: string
+- confidence: float (0.0 to 1.0)
+- water_damage_visible: boolean
+- image_quality: string
 """
 
 class ClaimsEvidenceAnalyzer:
     def __init__(self):
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    def _safe_float(self, value, default=0.0):
+        """Coerces potential string confidence labels to floats."""
+        mapping = {"high": 0.9, "medium": 0.6, "low": 0.3}
+        if isinstance(value, str):
+            return mapping.get(value.lower(), default)
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
 
     def analyze_damage_image(self, image_path: str) -> VisionAssessment:
         with open(image_path, "rb") as image_file:
@@ -30,14 +44,8 @@ class ClaimsEvidenceAnalyzer:
                 {
                     "role": "user",
                     "content": [
-                        {
-                            "type": "text", 
-                            "text": "Analyze image. Return JSON: damage_type, severity, confidence, water_damage_visible, image_quality"
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}
-                        },
+                        {"type": "text", "text": "Analyze image. Ensure confidence is a number and water_damage_visible is a boolean."},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}}
                     ],
                 },
             ],
@@ -45,10 +53,11 @@ class ClaimsEvidenceAnalyzer:
 
         data = json.loads(response.choices[0].message.content)
         
+        # Apply normalization before creating the Pydantic model
         return VisionAssessment(
-            damage_type=data.get("damage_type", "unknown"),
-            severity=data.get("severity", "unknown"),
-            confidence=data.get("confidence", 0.0),
-            water_damage_visible=data.get("water_damage_visible", False),
-            image_quality=data.get("image_quality", "poor")
+            damage_type=str(data.get("damage_type", "unknown")),
+            severity=str(data.get("severity", "unknown")),
+            confidence=self._safe_float(data.get("confidence")),
+            water_damage_visible=bool(data.get("water_damage_visible", False)),
+            image_quality=str(data.get("image_quality", "poor"))
         )
