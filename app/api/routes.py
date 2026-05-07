@@ -11,21 +11,25 @@ async def health():
     return {"status": "ok"}
 
 @router.post("/claims/evaluate")
-async def evaluate_claim(evidence: UploadedEvidence):
+async def evaluate_claim(evidence: UploadedEvidence, customer_statement: str):
     if not os.path.exists(evidence.image_path):
         raise HTTPException(status_code=404, detail="Image not found")
     
     try:
-        state = ClaimWorkflowState(claim_id=evidence.claim_id)
+        # Initialize state with the user's input for RAG
+        state = ClaimWorkflowState(
+            claim_id=evidence.claim_id,
+            customer_statement=customer_statement
+        )
         
         result = workflow.process_claim(state, evidence.image_path)
         
         return {
             "claim_id": result.claim_id,
             "assessment": result.vision_assessment,
-            "decision": result.final_decision
+            "decision": result.final_decision,
+            "policy_context": result.retrieved_clauses
         }
         
     except Exception as e:
-        # Triage failure
-        raise HTTPException(status_code=500, detail=f"Debug Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
