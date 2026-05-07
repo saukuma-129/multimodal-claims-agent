@@ -35,4 +35,12 @@ class PolicyStore:
     def search(self, query: str, limit: int = 3):
         query_vec = self._get_embedding(query)
         results = self.collection.query(query_embeddings=[query_vec], n_results=limit)
-        return results.get("documents", [[]])[0]
+        return [
+            {
+                "clause_id": results["ids"][0][i],
+                "content": results["documents"][0][i],
+                "title": results["metadatas"][0][i].get("source", "policy_clause"),
+                "relevance_score": round(1 - results["distances"][0][i], 3)
+            }
+            for i in range(len(results["ids"][0]))
+        ]

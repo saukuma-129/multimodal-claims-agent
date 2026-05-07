@@ -10,16 +10,14 @@ class ClaimWorkflow:
         self.retriever = PolicyStore()
 
     def process_claim(self, state: ClaimWorkflowState, image_path: str) -> ClaimWorkflowState:
-        # 1. RAG: Pull relevant policy text based on customer statement
+        # Pull policy context
         if state.customer_statement:
-            state.retrieved_clauses = self.retriever.retrieve_relevant_clauses(
-                state.customer_statement
-            )
+            state.retrieved_clauses = self.retriever.search(state.customer_statement)
 
-        # 2. Vision: Extract facts from image
+        # Visual fact extraction
         state.vision_assessment = self.analyzer.analyze_damage_image(image_path)
 
-        # 3. Decision: Run policy engine with vision + rag data
+        # Policy enforcement
         state.final_decision = self.engine.evaluate(state)
         
         return state
