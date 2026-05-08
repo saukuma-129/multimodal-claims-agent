@@ -8,7 +8,9 @@ Automated warranty claim processing using Multimodal RAG.
 ```bash
 docker-compose up --build
 ```
-3. POST a claim to `http://localhost:8000/claims` with an image and a description.
+3. **Test the API**:
+   - Interactive Docs: Open `http://localhost:8000/docs` to test via the Swagger UI.
+   - Direct API: POST to `http://localhost:8000/claims/evaluate` (or your specific route).
 
 ## Project Structure
 - `/app`: FastAPI logic and ClaimWorkflow.
