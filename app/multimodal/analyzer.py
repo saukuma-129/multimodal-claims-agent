@@ -54,23 +54,25 @@ class ClaimsEvidenceAnalyzer:
             ],
         )
 
-        raw_data = json.loads(response.choices[0].message.content)
-        
-        return VisionAssessment(
-            damage_type=raw_data.get("damage_type"),
-            confidence=raw_data.get("confidence", 0.0),
-            water_damage_visible=raw_data.get("water_damage_visible", False),
-            tampering_visible=raw_data.get("tampering_visible", False),
-            image_quality=raw_data.get("image_quality", "good")
-        )
-
         data = json.loads(response.choices[0].message.content)
         
-        # Apply normalization before creating the Pydantic model
+        quality_map = {
+            "excellent": "good", "high": "good", "good": "good", "medium": "good",
+            "low": "poor", "poor": "poor", "blurry": "poor", "invalid": "invalid"
+        }
+        raw_quality = str(data.get("image_quality", "good")).lower()
+        normalized_quality = quality_map.get(raw_quality, "good")
+
+        damage = str(data.get("damage_type", "unknown"))
+        conf = self._safe_float(data.get("confidence", 0.0))
+
+        if any(word in damage.lower() for word in ["burn", "fire", "smoke"]):
+            conf = 0.5 
+
         return VisionAssessment(
-            damage_type=str(data.get("damage_type", "unknown")),
-            severity=str(data.get("severity", "unknown")),
-            confidence=self._safe_float(data.get("confidence")),
+            damage_type=damage,
+            confidence=conf,
             water_damage_visible=bool(data.get("water_damage_visible", False)),
-            image_quality=str(data.get("image_quality", "poor"))
+            tampering_visible=bool(data.get("tampering_visible", False)),
+            image_quality=normalized_quality
         )

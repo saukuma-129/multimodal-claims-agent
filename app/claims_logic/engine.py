@@ -12,7 +12,6 @@ class ClaimsDecisionEngine:
                 policy_references=refs
             )
         
-                # Safeguard: Don't approve if the policy search failed
         if not state.retrieved_clauses:
             return ClaimDecision(
                 decision="manual_review", 
@@ -25,6 +24,15 @@ class ClaimsDecisionEngine:
         if v.water_damage_visible:
             return ClaimDecision(decision="rejected", reason_codes=["VOID_ENVIRONMENTAL_ABUSE"], confidence=v.confidence, policy_references=refs)
 
+        dtype = (v.damage_type or "").lower()
+        if any(x in dtype for x in ["burn", "fire", "smoke", "melt"]):
+            return ClaimDecision(
+                decision="manual_review",
+                reason_codes=["AMBIGUOUS_BURN_DAMAGE_AUDIT"],
+                confidence=v.confidence,
+                policy_references=refs
+            )
+        
         is_high_quality = v.image_quality.lower() in ["good", "high", "excellent"]
 
         if not is_high_quality or v.confidence < 0.60:

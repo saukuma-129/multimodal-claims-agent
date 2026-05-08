@@ -26,11 +26,16 @@ async def evaluate_claim(request: ClaimRequest):
         
         result = workflow.process_claim(state, evidence.image_path)
         
+        clean_policy_context = [
+            clause for clause in result.retrieved_clauses 
+            if clause['relevance_score'] > 0.22 and "Project:" not in clause['content']
+        ]
+
         return {
             "claim_id": result.claim_id,
             "assessment": result.vision_assessment,
             "decision": result.final_decision,
-            "policy_context": result.retrieved_clauses
+            "policy_context": clean_policy_context
         }
         
     except Exception as e:
