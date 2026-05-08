@@ -35,3 +35,7 @@ class ClaimWorkflowState(BaseModel):
 class ClaimSession(BaseModel):
     claim_id: str
     status: Literal["open", "awaiting_documents", "under_review"]
+
+class ClaimRequest(BaseModel):
+    evidence: UploadedEvidence
+    customer_statement: str
