@@ -9,7 +9,11 @@ The system is built on a **Hybrid Separation of Concerns**. We deliberately avoi
     *   `VOID_TAMPERING` (Highest legal priority)
     *   `VOID_ENVIRONMENTAL_ABUSE` (Water damage)
     *   `IMAGE_QUALITY_INSUFFICIENT` (System safeguard)
+    *   `AMBIGUOUS_BURN_DAMAGE` (Safety/Liability gate)
     *   `MANUAL_REVIEW_REQUIRED` (Human fallback)
+
+### Safety & Liability Gating
+A critical architectural override was implemented for fire and thermal damage. While a naive AI might auto-approve "burnt wires" as a hardware failure, our engine treats all thermal events as high-risk. These are programmatically routed to `manual_review` to determine the root cause (internal component failure vs. external environmental abuse), mitigating safety liability.
 
 ## Human-in-the-Loop (HITL) Fallback
 The system is not "fully autonomous" by design. Any claim with a visual confidence score below **0.75** or an ambiguous policy match is automatically routed to a `manual_review` state. We utilize a standardized `ReviewTask` schema to preserve the full system state—including extraction facts and the specific RAG-retrieved policy clauses—allowing a human auditor to verify the claim in seconds without re-processing.
