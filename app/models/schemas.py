@@ -39,3 +39,13 @@ class ClaimSession(BaseModel):
 class ClaimRequest(BaseModel):
     evidence: UploadedEvidence
     customer_statement: str
+
+class ReviewTask(BaseModel):
+    claim_id: str
+    engine_decision: Literal["approved", "rejected", "manual_review"]
+    reason_codes: List[str]
+    customer_statement: str
+    model_reasoning: VisionAssessment
+    retrieved_policies: List[RetrievedClause]
+    escalation_reason: Optional[str] = None
+    created_at: str
