@@ -23,3 +23,12 @@ The system is not "fully autonomous" by design. Any claim with a visual confiden
 *   **Gateway Throttling:** We propose API-level rate limiting at the ingress layer. This protects expensive multimodal inference paths from "retry storms" and cost spikes during bursts of high-traffic or abuse.
 *   **Vector Sharding:** ChromaDB handles our current policy base. For a 1M+ user scale, we would migrate to a managed **PGVector** instance, sharding policy embeddings by product SKU or region to maintain retrieval latency under 100ms.
 *   **Tiered Model Routing:** To optimize COGS (Cost of Goods Sold), we would implement a "Cheap-Pass" filter using a smaller model (e.g., GPT-4o-mini) for image quality triage, only escalating to high-reasoning models for complex policy edge cases.
+
+## Design Choice: Native Python vs. LangGraph
+I deliberately chose to implement the orchestration in **native Python** rather than using frameworks like LangChain or LangGraph. 
+
+**Why?**
+* **Auditability:** It’s much easier to debug a standard Python function than a "black-box" agent trace when a customer asks why their claim was rejected.
+* **Deterministic Safety:** Warranty claims are a legal and safety process. I wanted a linear state machine that is 100% predictable. Agentic loops can sometimes "reason" their way around a safety gate; native code can't.
+* **Speed:** This keeps the Docker image light and the setup simple. 
+* **Roadmap:** If the conversation flow gets significantly more complex in the future, we can easily wrap this logic into a LangGraph node.
