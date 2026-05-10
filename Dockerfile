@@ -12,13 +12,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application source
 COPY . .
 
-# Make startup script executable
-RUN chmod +x start.sh
-
 # Switch to non-root user
 USER appuser
 
-# Cloud Run injects $PORT at runtime (default 8080).
-# start.sh seeds the vector store on cold start, then launches uvicorn.
-CMD ["/bin/sh", "start.sh"]
+# Inform Docker which port the app listens on (documentation + -P flag support)
+EXPOSE 8000
+
+# For local development: python -m app.knowledge.ingest must be run once
+# separately to seed the vector store before starting the server.
+CMD ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "8000"]
 
