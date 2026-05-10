@@ -1,23 +1,12 @@
 # =============================================================================
-# CI/CD Pipeline — ChargePoint Claims Agent → Vercel
+# CI Pipeline — ChargePoint Claims Agent
 # =============================================================================
-#
-# REQUIRED GITHUB SECRETS  (Settings → Secrets and variables → Actions → New):
-#
-#   VERCEL_TOKEN      — Vercel account token
-#                       vercel.com → Settings → Tokens → Create
-#
-#   VERCEL_ORG_ID     — vercel.com → Settings → General → Your ID
-#                       Or run locally: npx vercel link  (writes .vercel/project.json)
-#
-#   VERCEL_PROJECT_ID — vercel.com → Project → Settings → General
-#                       Or read from .vercel/project.json after linking
-#
-# OPENAI_API_KEY must be set in the Vercel dashboard (not here):
-#   vercel.com → Project → Settings → Environment Variables → Add
+# Deployment is handled automatically by Vercel (connected via UI).
+# This workflow only runs linting as a quality gate on every push and PR.
+# Vercel will NOT deploy if this check fails when branch protection is enabled.
 # =============================================================================
 
-name: CI/CD — Build & Deploy to Vercel
+name: CI — Lint
 
 on:
   push:
@@ -27,9 +16,6 @@ on:
 
 jobs:
 
-  # ---------------------------------------------------------------------------
-  # Job 1: Lint — runs on every push and every PR
-  # ---------------------------------------------------------------------------
   lint:
     name: Lint (ruff)
     runs-on: ubuntu-latest
@@ -47,22 +33,3 @@ jobs:
 
       - name: Run ruff on app/
         run: ruff check app/ --ignore E501
-
-  # ---------------------------------------------------------------------------
-  # Job 2: Deploy — only when lint passes AND push is to main
-  # ---------------------------------------------------------------------------
-  deploy:
-    name: Deploy to Vercel
-    runs-on: ubuntu-latest
-    needs: lint
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Vercel
-        run: npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
