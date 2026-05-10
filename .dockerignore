@@ -1,0 +1,21 @@
+# Python runtime artifacts
+venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# Secrets — never bake into image
+.env
+
+# Git internals
+.git/
+.gitignore
+
+# Docs — not needed at runtime
+README.md
+ARCHITECTURE.md
+AI_USAGE.md
+EVALS.md
+
+# macOS
+.DS_Store
