@@ -1,38 +1,29 @@
 # =============================================================================
-# CI/CD Pipeline — ChargePoint Claims Agent → GCP Cloud Run
+# CI/CD Pipeline — ChargePoint Claims Agent → Vercel
 # =============================================================================
 #
 # REQUIRED GITHUB SECRETS  (Settings → Secrets and variables → Actions → New):
 #
-#   GCP_PROJECT_ID   — GCP project ID shown in the Console top bar
-#                      e.g.  my-project-123456
+#   VERCEL_TOKEN      — Vercel account token
+#                       vercel.com → Settings → Tokens → Create
 #
-#   GCP_SA_KEY       — Service Account JSON key (paste the raw JSON, not base64)
-#                      The SA needs these roles:
-#                        - roles/run.admin
-#                        - roles/artifactregistry.writer
-#                        - roles/iam.serviceAccountUser
+#   VERCEL_ORG_ID     — vercel.com → Settings → General → Your ID
+#                       Or run locally: npx vercel link  (writes .vercel/project.json)
 #
-#   OPENAI_API_KEY   — Your OpenAI key (sk-...)
+#   VERCEL_PROJECT_ID — vercel.com → Project → Settings → General
+#                       Or read from .vercel/project.json after linking
 #
-# ONE-TIME GCP SETUP (run once in Cloud Shell or gcloud CLI):
-#   gcloud artifacts repositories create claims-agent \
-#     --repository-format=docker --location=us-central1
+# OPENAI_API_KEY must be set in the Vercel dashboard (not here):
+#   vercel.com → Project → Settings → Environment Variables → Add
 # =============================================================================
 
-name: CI/CD — Build & Deploy to Cloud Run
+name: CI/CD — Build & Deploy to Vercel
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
-env:
-  GCP_REGION:    us-central1
-  SERVICE_NAME:  chargepoint-claims-agent
-  REGISTRY:      us-central1-docker.pkg.dev
-  REPO:          claims-agent
 
 jobs:
 
@@ -55,13 +46,13 @@ jobs:
         run: pip install ruff
 
       - name: Run ruff on app/
-        run: ruff check app/ --ignore E501   # E501 = line-too-long (not critical)
+        run: ruff check app/ --ignore E501
 
   # ---------------------------------------------------------------------------
-  # Job 2: Build & Deploy — only when lint passes AND push is to main
+  # Job 2: Deploy — only when lint passes AND push is to main
   # ---------------------------------------------------------------------------
-  build-and-deploy:
-    name: Build & Deploy to Cloud Run
+  deploy:
+    name: Deploy to Vercel
     runs-on: ubuntu-latest
     needs: lint
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -70,51 +61,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Authenticate to GCP via Service Account JSON key
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      # Allow Docker to push to Artifact Registry
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
-
-      # Tag with commit SHA (immutable audit trail) and :latest
-      - name: Build and push Docker image
-        run: |
-          IMAGE=${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}/${{ env.SERVICE_NAME }}
-          docker build \
-            --tag ${IMAGE}:${{ github.sha }} \
-            --tag ${IMAGE}:latest \
-            .
-          docker push ${IMAGE}:${{ github.sha }}
-          docker push ${IMAGE}:latest
-          echo "IMAGE=${IMAGE}:${{ github.sha }}" >> $GITHUB_ENV
-
-      # Deploy the SHA-tagged image to Cloud Run
-      - name: Deploy to Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v2
-        with:
-          service: ${{ env.SERVICE_NAME }}
-          region:  ${{ env.GCP_REGION }}
-          image:   ${{ env.IMAGE }}
-          env_vars: |
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-          flags: >-
-            --allow-unauthenticated
-            --memory=1Gi
-            --cpu=1
-            --min-instances=0
-            --max-instances=5
-            --timeout=120
-
-      - name: Print deployed URL
-        run: |
-          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
-            --region=${{ env.GCP_REGION }} \
-            --format='value(status.url)')
-          echo "✅ Live at: ${URL}/docs"
+      - name: Deploy to Vercel
+        run: npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
