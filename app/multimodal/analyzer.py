@@ -1,7 +1,6 @@
 import base64
 import json
 import os
-from pathlib import Path
 from openai import OpenAI
 from dotenv import load_dotenv
 from app.models.schemas import VisionAssessment
@@ -12,9 +11,9 @@ VISION_SYSTEM_PROMPT = """
 You are a warranty inspection assistant. Extract findings from hardware images.
 IMPORTANT: Return STRICT JSON with these types:
 - damage_type: string
-- severity: string
 - confidence: float (0.0 to 1.0)
 - water_damage_visible: boolean
+- tampering_visible: boolean
 - image_quality: string
 """
 

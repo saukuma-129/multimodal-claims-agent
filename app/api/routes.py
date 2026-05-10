@@ -1,6 +1,6 @@
 import os
 from fastapi import APIRouter, HTTPException
-from app.models.schemas import UploadedEvidence, ClaimWorkflowState, ClaimRequest
+from app.models.schemas import ClaimWorkflowState, ClaimRequest
 from app.agents.workflow import ClaimWorkflow
 
 router = APIRouter()
