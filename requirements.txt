@@ -3,6 +3,4 @@ uvicorn
 pydantic
 chromadb
 openai
-tiktoken
 python-dotenv
-pillow
